@@ -34,4 +34,13 @@ class Config {
     static void save(Context c, String server, String key, String mode) {
         p(c).edit().putString("server", server).putString("key", key).putString("mode", mode).apply();
     }
+
+    /** Şu ana kadar sunucuya gönderilmiş en büyük arama kaydı _ID'si (tekrar göndermemek için). */
+    static long lastCallId(Context c) {
+        return p(c).getLong("last_call_id", 0);
+    }
+
+    static void setLastCallId(Context c, long id) {
+        p(c).edit().putLong("last_call_id", id).apply();
+    }
 }

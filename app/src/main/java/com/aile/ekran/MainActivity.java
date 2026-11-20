@@ -131,6 +131,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        applyServices(); // izin ayarlarından dönüşte servisi yeniden tetikle (yeni izni yakalasın)
         refresh();
     }
 
@@ -236,6 +237,12 @@ public class MainActivity extends Activity {
                     testConnection();
                 }
             }));
+            actions.addView(btn("Arama kayıtlarını gör", new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    startActivity(new Intent(MainActivity.this, CallLogActivity.class));
+                }
+            }));
         }
     }
 
@@ -259,9 +266,21 @@ public class MainActivity extends Activity {
     }
 
     private void askPermissions() {
+        java.util.ArrayList<String> need = new java.util.ArrayList<String>();
         if (Build.VERSION.SDK_INT >= 33
                 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIF);
+            need.add(Manifest.permission.POST_NOTIFICATIONS);
+        }
+        if ("child".equals(Config.mode(this))) {
+            if (checkSelfPermission(Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
+                need.add(Manifest.permission.READ_CALL_LOG);
+            }
+            if (checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+                need.add(Manifest.permission.READ_CONTACTS);
+            }
+        }
+        if (!need.isEmpty()) {
+            requestPermissions(need.toArray(new String[0]), REQ_NOTIF);
         } else {
             askBattery();
         }

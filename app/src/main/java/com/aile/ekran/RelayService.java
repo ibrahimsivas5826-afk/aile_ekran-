@@ -14,9 +14,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -49,10 +52,51 @@ public class RelayService extends Service {
     private volatile long watchSeen = 0;
     private final ArrayList<String> events = new ArrayList<String>();
     private final AtomicInteger nid = new AtomicInteger(100);
+    /** Arama kayıtları: en yeni ekte en üstte olacak şekilde disk üstünde tutulur. */
+    private final ArrayList<JSONObject> calls = new ArrayList<JSONObject>();
+    private static final int MAX_CALLS = 1000;
+
+    private File callsFile() {
+        return new File(getFilesDir(), "calls.jsonl");
+    }
+
+    private void loadCalls() {
+        calls.clear();
+        File f = callsFile();
+        if (!f.exists()) return;
+        try {
+            RandomAccessFile raf = new RandomAccessFile(f, "r");
+            String line;
+            while ((line = raf.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+                try {
+                    calls.add(new JSONObject(new String(line.getBytes("ISO-8859-1"), "UTF-8")));
+                } catch (Exception ignored) {
+                }
+            }
+            raf.close();
+            while (calls.size() > MAX_CALLS) calls.remove(0);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void appendCall(JSONObject o) {
+        synchronized (calls) {
+            calls.add(o);
+            if (calls.size() > MAX_CALLS) calls.remove(0);
+            try {
+                FileOutputStream fo = new FileOutputStream(callsFile(), true);
+                fo.write((o.toString() + "\n").getBytes("UTF-8"));
+                fo.close();
+            } catch (Exception ignored) {
+            }
+        }
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        loadCalls();
         Notification n = Util.notif(this, "Çocuğun telefonundan haber bekleniyor");
         if (Build.VERSION.SDK_INT >= 34) {
             startForeground(3, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
@@ -251,7 +295,8 @@ public class RelayService extends Service {
 
             } else if (path.equals("/event") && method.equals("POST")) {
                 JSONObject ev = new JSONObject(new String(body, "UTF-8"));
-                if ("unlock".equals(ev.optString("type"))) {
+                String etype = ev.optString("type");
+                if ("unlock".equals(etype)) {
                     long ts = ev.optLong("ts", now);
                     String when = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault()).format(new Date(ts));
                     synchronized (events) {
@@ -260,8 +305,24 @@ public class RelayService extends Service {
                     }
                     childSeen = now;
                     notifyUnlock(when.substring(11));
+                } else if ("calls".equals(etype)) {
+                    JSONArray items = ev.optJSONArray("items");
+                    if (items != null) {
+                        for (int i = 0; i < items.length(); i++) {
+                            appendCall(items.getJSONObject(i));
+                        }
+                    }
+                    childSeen = now;
                 }
                 text(out, 200, "ok");
+
+            } else if (path.equals("/calls")) {
+                JSONArray arr = new JSONArray();
+                synchronized (calls) {
+                    int start = Math.max(0, calls.size() - 300);
+                    for (int i = calls.size() - 1; i >= start; i--) arr.put(calls.get(i));
+                }
+                respond(out, 200, "application/json; charset=utf-8", arr.toString().getBytes("UTF-8"), null);
 
             } else if (path.equals("/status")) {
                 JSONObject o = new JSONObject();

@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ServiceInfo;
 import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
 
 import java.util.concurrent.ExecutorService;
@@ -15,11 +17,14 @@ import java.util.concurrent.Executors;
 
 /**
  * Çocuk telefonunda sürekli çalışır. Kilit açılınca (ACTION_USER_PRESENT)
- * sunucuya "unlock" olayı gönderir; sunucu da Telegram'dan ebeveyne bildirim atar.
+ * sunucuya "unlock" olayı gönderir; sunucu da ebeveyne bildirim atar.
+ * Ayrıca arama kaydını izler (CallWatcher) ve yeni aramaları anında gönderir.
  */
 public class UnlockService extends Service {
     private BroadcastReceiver receiver;
     private final ExecutorService ex = Executors.newSingleThreadExecutor();
+    private HandlerThread callThread;
+    private CallWatcher callWatcher;
 
     @Override
     public void onCreate() {
@@ -37,6 +42,11 @@ public class UnlockService extends Service {
             }
         };
         registerReceiver(receiver, new IntentFilter(Intent.ACTION_USER_PRESENT));
+
+        callThread = new HandlerThread("calllog");
+        callThread.start();
+        callWatcher = new CallWatcher(this, new Handler(callThread.getLooper()));
+        callWatcher.start();
     }
 
     private void sendUnlock() {
@@ -60,6 +70,8 @@ public class UnlockService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        // İzin sonradan verilmiş olabilir (ör. Ayarlar'dan dönüş); her başlatmada yeniden dene.
+        if (callWatcher != null) callWatcher.start();
         return START_STICKY;
     }
 
@@ -69,6 +81,8 @@ public class UnlockService extends Service {
             unregisterReceiver(receiver);
         } catch (Exception ignored) {
         }
+        if (callWatcher != null) callWatcher.stop();
+        if (callThread != null) callThread.quitSafely();
         ex.shutdownNow();
         super.onDestroy();
     }

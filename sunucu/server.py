@@ -35,6 +35,7 @@ try:
 except Exception:
     TZ = None
 MAX_FRAME = 2_000_000
+CALLS_FILE = os.environ.get("CALLS_FILE", "calls.jsonl")
 CHILD_TIMEOUT = 10   # sn: çocuk bu kadar süre ses vermezse "bağlı değil"
 WATCH_TIMEOUT = 8    # sn: ebeveyn bu kadar süre sorgulamazsa "izlemiyor"
 
@@ -46,6 +47,7 @@ state = {
     "child_seen": 0.0,
     "watch_seen": 0.0,
     "events": [],
+    "calls": [],
 }
 
 
@@ -132,6 +134,10 @@ class Handler(BaseHTTPRequestHandler):
             }, ensure_ascii=False).encode()
             return self._send(200, body, "application/json; charset=utf-8")
 
+        if u.path == "/calls":  # arama kayıtları, en yeni ilk sırada
+            body = json.dumps(list(reversed(state["calls"][-300:])), ensure_ascii=False).encode()
+            return self._send(200, body, "application/json; charset=utf-8")
+
         self._send(404, b"yok")
 
     def do_POST(self):
@@ -171,12 +177,42 @@ class Handler(BaseHTTPRequestHandler):
                     args=("🔓 Çocuğun telefonu açıldı (%s)\nEkranı görmek için Aile Ekranı uygulamasını aç." % when[11:],),
                     daemon=True,
                 ).start()
+            elif ev.get("type") == "calls":
+                items = ev.get("items") or []
+                state["calls"].extend(items)
+                state["calls"] = state["calls"][-1000:]
+                try:
+                    with open(CALLS_FILE, "a", encoding="utf-8") as f:
+                        for it in items:
+                            f.write(json.dumps(it, ensure_ascii=False) + "\n")
+                except Exception as e:
+                    print("Arama kaydi diske yazilamadi:", e)
+                state["child_seen"] = time.time()
             return self._send(200, b"ok")
 
         self._send(404, b"yok")
 
 
+def load_calls():
+    if not os.path.exists(CALLS_FILE):
+        return
+    try:
+        with open(CALLS_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    state["calls"].append(json.loads(line))
+                except Exception:
+                    pass
+        state["calls"] = state["calls"][-1000:]
+    except Exception as e:
+        print("Arama kayitlari yuklenemedi:", e)
+
+
 def main():
+    load_calls()
     if not KEY or len(KEY) < 8:
         sys.exit("AILE_KEY ortam değişkenini (en az 8 karakter) ayarla.")
     srv = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)

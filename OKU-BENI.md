@@ -32,10 +32,11 @@ Telefonların internet üzerinden birbirini bulması için. Kişisel kullanım �
 1. Aile Ekranı'nı aç → **Ortak anahtar** yaz (harf/rakam, örn. `aile2026x`) → **BENİM telefonum** → adres kutusunu **boş bırak** → Kaydet.
 2. **İzinleri ver** (bildirim + pil).
 3. Ekranda "ÇOCUĞUN telefonuna yazacağın adres" çıkar: `http://100.x.y.z:8080`. Bunu not al.
+4. "Arama kayıtlarını gör" ile kimi ne zaman ne kadar aradığını listeleyebilirsin — çocuk kendi telefonundan kaydı silse bile, arama biter bitmez sana iletildiği için elinde kalır.
 
 ## 4) Çocuğun telefonu
 1. Aile Ekranı'nı aç → adres kutusuna yukarıdaki `http://100.x.y.z:8080` → aynı **anahtar** → **ÇOCUĞUN telefonu** → Kaydet.
-2. **1) İzinleri ver** (bildirim + pil).
+2. **1) İzinleri ver** (bildirim, **arama kayıtları**, **kişiler** + pil). Arama kayıtları izni verilmezse sadece o özellik çalışmaz, kilit bildirimi ve ekran paylaşımı yine çalışır.
 3. **2) Ekran paylaşımını başlat** → Android'in sorduğu pencerede **"Tüm ekran"** (Entire screen) seç → Başlat.
 
 Hepsi bu. Çocuk telefonu açınca sende "Çocuğun telefonu açıldı" bildirimi çıkar; dokununca canlı ekran gelir. Senin telefonunda uygulamayı açınca da doğrudan canlı ekran açılır.
