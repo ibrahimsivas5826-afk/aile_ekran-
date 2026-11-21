@@ -22,8 +22,13 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.zxing.integration.android.IntentIntegrator;
-import com.google.zxing.integration.android.IntentResult;
+import com.google.android.gms.tasks.OnCanceledListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.mlkit.vision.barcode.common.Barcode;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanner;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning;
 
 import org.json.JSONObject;
 
@@ -35,7 +40,6 @@ import java.util.Collections;
 public class MainActivity extends Activity {
     private static final int REQ_CAPTURE = 100;
     private static final int REQ_NOTIF = 101;
-    private static final int REQ_CAMERA = 102;
 
     private EditText serverEt, keyEt;
     private RadioButton childRb, parentRb;
@@ -334,17 +338,7 @@ public class MainActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQ_NOTIF) {
-            askBattery();
-        } else if (requestCode == REQ_CAMERA) {
-            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
-            if (granted) {
-                scanQr();
-            } else {
-                Toast.makeText(this, "QR okutmak için kamera izni gerekli. Ayarlar > Uygulamalar > Aile Ekranı > "
-                        + "İzinler'den kamerayı açıp tekrar dene; ya da adres/anahtarı elle yaz.", Toast.LENGTH_LONG).show();
-            }
-        }
+        if (requestCode == REQ_NOTIF) askBattery();
     }
 
     private void askBattery() {
@@ -358,23 +352,35 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Google'ın kendi kod tarayıcısı: kamerayı Play Services yönetir, bizim iznimiz/kodumuz gerekmez,
+     * cihaza özgü kamera çökmelerinden etkilenmez. İlk kullanımda tarayıcı modülünü indirmek için
+     * birkaç saniye internet gerekebilir. */
     private void scanQr() {
-        // Kamera iznini önce biz isteyelim: bazı telefonlarda (örn. MIUI) kütüphanenin kendi izin
-        // isteği sessizce başarısız olup tarayıcı ekranı hiç açılmadan geri dönebiliyor.
-        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.CAMERA}, REQ_CAMERA);
-            return;
-        }
-        try {
-            IntentIntegrator integrator = new IntentIntegrator(this);
-            integrator.setOrientationLocked(false);
-            integrator.setBeepEnabled(false);
-            integrator.setPrompt("Diğer telefondaki QR kodunu kameraya göster");
-            integrator.initiateScan();
-        } catch (Exception e) {
-            Toast.makeText(this, "QR tarayıcı açılamadı: " + e.getMessage()
-                    + "\nAdres/anahtarı elle de yazabilirsin.", Toast.LENGTH_LONG).show();
-        }
+        GmsBarcodeScannerOptions options = new GmsBarcodeScannerOptions.Builder()
+                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                .build();
+        GmsBarcodeScanner scanner = GmsBarcodeScanning.getClient(this, options);
+        scanner.startScan()
+                .addOnSuccessListener(new OnSuccessListener<Barcode>() {
+                    @Override
+                    public void onSuccess(Barcode barcode) {
+                        String raw = barcode.getRawValue();
+                        if (raw != null) applyScanned(raw);
+                    }
+                })
+                .addOnCanceledListener(new OnCanceledListener() {
+                    @Override
+                    public void onCanceled() {
+                        // kullanıcı taramayı iptal etti
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(Exception e) {
+                        Toast.makeText(MainActivity.this, "QR tarama başarısız: " + e.getMessage()
+                                + "\nAdres/anahtarı elle de yazabilirsin.", Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 
     /** QR'dan okunan {"addr":...,"key":...,"tskey":...} ile alanları doldurur, ÇOCUĞUN telefonu seçer, kaydeder
@@ -423,11 +429,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        IntentResult scan = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-        if (scan != null) {
-            if (scan.getContents() != null) applyScanned(scan.getContents());
-            return;
-        }
         if (requestCode == REQ_CAPTURE) {
             if (resultCode == RESULT_OK && data != null) {
                 Intent i = new Intent(this, CaptureService.class);

@@ -10,8 +10,8 @@ android {
         applicationId "com.aile.ekran"
         minSdk 26
         targetSdk 34
-        versionCode 6
-        versionName "1.5"
+        versionCode 7
+        versionName "1.6"
     }
 
     // Sabit imza anahtarı: her derlemede aynı imza çıksın diye (yoksa Android
@@ -42,7 +42,9 @@ android {
 }
 
 dependencies {
-    // Eşleştirme QR kodu: üretmek (zxing core) ve kameradan okumak (zxing-android-embedded)
+    // Eşleştirme QR kodunu üretmek için (ebeveyn tarafı, saf Java - kamera/native kod yok).
     implementation 'com.google.zxing:core:3.5.3'
-    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+    // QR okumak için: Google'ın kendi tarayıcısı, kamerayı Play Services yönetir - bizim kodumuz
+    // kamerayla hiç uğraşmaz, cihaza özgü kamera çökmelerinden etkilenmez, kamera izni de gerekmez.
+    implementation 'com.google.android.gms:play-services-code-scanner:16.1.0'
 }
