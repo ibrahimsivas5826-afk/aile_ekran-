@@ -2,6 +2,7 @@ package com.aile.ekran;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -261,6 +262,21 @@ public class MainActivity extends Activity {
                     refresh();
                 }
             }));
+            actions.addView(label("3) Telefon bağlantıyı koparmasın diye (özellikle Xiaomi/Redmi):"));
+            actions.addView(btn("Pil kısıtlamasını kaldır", new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    askBattery();
+                }
+            }));
+            actions.addView(btn("Otomatik başlatma ekranını aç (Xiaomi)", new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    openAutostartSettings();
+                }
+            }));
+            actions.addView(label("Sonra: telefonun Son Uygulamalar ekranında bu uygulamanın kartına "
+                    + "uzun bas ve kilit simgesine dokun. Bu adımı ayarlardan otomatik açamıyoruz, elle yapılması gerekiyor."));
         } else if ("parent".equals(mode)) {
             actions.addView(btn("İzinleri ver (bildirim ve pil)", new View.OnClickListener() {
                 @Override
@@ -339,6 +355,27 @@ public class MainActivity extends Activity {
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQ_NOTIF) askBattery();
+    }
+
+    /** Xiaomi/MIUI'nin "Otomatik başlatma" izin ekranını doğrudan açmayı dener; bu telefon marka/ROM'a
+     * özgü, resmi olmayan bir ekran olduğu için bulunamazsa genel uygulama bilgisi ekranına döner. */
+    private void openAutostartSettings() {
+        try {
+            Intent i = new Intent();
+            i.setComponent(new ComponentName("com.miui.securitycenter",
+                    "com.miui.permcenter.autostart.AutoStartManagementActivity"));
+            startActivity(i);
+            Toast.makeText(this, "Açılan listede Aile Ekranı'nı bul ve aç.", Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            try {
+                startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:" + getPackageName())));
+                Toast.makeText(this, "Bu telefonda ayrı bir otomatik başlatma ekranı yok. "
+                        + "Açılan sayfada izin/pil/arka plan ayarlarına bak.", Toast.LENGTH_LONG).show();
+            } catch (Exception e2) {
+                Toast.makeText(this, "Ayarlar açılamadı: " + e2.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
     private void askBattery() {

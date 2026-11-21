@@ -41,6 +41,7 @@ Telefonların internet üzerinden birbirini bulması için. Kişisel kullanım �
    - QR okutamazsan (kamera yoksa vb.) adres/anahtarı elle de yazabilirsin: adrese senin telefonunda QR ekranının altında yazan `http://100.x.y.z:8080`'i, anahtara da senin yazdığın kelimeyi gir, **ÇOCUĞUN telefonu**'nu seç, Kaydet.
 2. **1) İzinleri ver** (bildirim, **arama kayıtları**, **kişiler** + pil). Arama kayıtları izni verilmezse sadece o özellik çalışmaz, kilit bildirimi ve ekran paylaşımı yine çalışır.
 3. **2) Ekran paylaşımını başlat** → Android'in sorduğu pencerede **"Tüm ekran"** (Entire screen) seç → Başlat.
+4. **3) Telefon bağlantıyı koparmasın diye** (özellikle Xiaomi/Redmi telefonlarda "bellek temizle" bağlantıyı koparıyorsa): **"Pil kısıtlamasını kaldır"** ve **"Otomatik başlatma ekranını aç (Xiaomi)"** düğmelerine sırayla bas, açılan ekranlarda Aile Ekranı'na izin ver. Sonra telefonun **Son Uygulamalar** ekranında bu uygulamanın kartına uzun basıp **kilit** simgesine dokun (bu son adım telefon ayarlarından otomatik açılamıyor, elle yapılması gerekiyor). Bu ayarlar bir kere yapılır.
 
 Hepsi bu. Çocuk telefonu açınca sende "Çocuğun telefonu açıldı" bildirimi çıkar; dokununca canlı ekran gelir. Senin telefonunda uygulamayı açınca da doğrudan canlı ekran açılır.
 
