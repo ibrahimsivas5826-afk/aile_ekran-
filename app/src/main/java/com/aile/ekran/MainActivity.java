@@ -137,6 +137,13 @@ public class MainActivity extends Activity {
         statusTv.setPadding(0, dp(16), 0, 0);
         root.addView(statusTv);
 
+        root.addView(btn("Son hatayı göster / kopyala", new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showLastCrash();
+            }
+        }));
+
         setContentView(sv);
         buildActions();
 
@@ -438,6 +445,28 @@ public class MainActivity extends Activity {
                 Toast.makeText(this, "İzin verilmedi", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    private void showLastCrash() {
+        String log = CrashHandler.readLast(this);
+        if (log == null || log.trim().isEmpty()) {
+            Toast.makeText(this, "Kayıtlı bir hata yok.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Son hata")
+                .setMessage(log)
+                .setPositiveButton("Kopyala", new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface d, int which) {
+                        android.content.ClipboardManager cm =
+                                (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                        cm.setPrimaryClip(android.content.ClipData.newPlainText("hata", CrashHandler.readLast(MainActivity.this)));
+                        Toast.makeText(MainActivity.this, "Kopyalandı, Claude'a yapıştırabilirsin.", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Kapat", null)
+                .show();
     }
 
     private void testConnection() {
