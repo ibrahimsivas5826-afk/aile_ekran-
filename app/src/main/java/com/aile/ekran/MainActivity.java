@@ -35,6 +35,7 @@ import java.util.Collections;
 public class MainActivity extends Activity {
     private static final int REQ_CAPTURE = 100;
     private static final int REQ_NOTIF = 101;
+    private static final int REQ_CAMERA = 102;
 
     private EditText serverEt, keyEt;
     private RadioButton childRb, parentRb;
@@ -326,7 +327,17 @@ public class MainActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQ_NOTIF) askBattery();
+        if (requestCode == REQ_NOTIF) {
+            askBattery();
+        } else if (requestCode == REQ_CAMERA) {
+            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            if (granted) {
+                scanQr();
+            } else {
+                Toast.makeText(this, "QR okutmak için kamera izni gerekli. Ayarlar > Uygulamalar > Aile Ekranı > "
+                        + "İzinler'den kamerayı açıp tekrar dene; ya da adres/anahtarı elle yaz.", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
     private void askBattery() {
@@ -341,11 +352,22 @@ public class MainActivity extends Activity {
     }
 
     private void scanQr() {
-        IntentIntegrator integrator = new IntentIntegrator(this);
-        integrator.setOrientationLocked(false);
-        integrator.setBeepEnabled(false);
-        integrator.setPrompt("Diğer telefondaki QR kodunu kameraya göster");
-        integrator.initiateScan();
+        // Kamera iznini önce biz isteyelim: bazı telefonlarda (örn. MIUI) kütüphanenin kendi izin
+        // isteği sessizce başarısız olup tarayıcı ekranı hiç açılmadan geri dönebiliyor.
+        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.CAMERA}, REQ_CAMERA);
+            return;
+        }
+        try {
+            IntentIntegrator integrator = new IntentIntegrator(this);
+            integrator.setOrientationLocked(false);
+            integrator.setBeepEnabled(false);
+            integrator.setPrompt("Diğer telefondaki QR kodunu kameraya göster");
+            integrator.initiateScan();
+        } catch (Exception e) {
+            Toast.makeText(this, "QR tarayıcı açılamadı: " + e.getMessage()
+                    + "\nAdres/anahtarı elle de yazabilirsin.", Toast.LENGTH_LONG).show();
+        }
     }
 
     /** QR'dan okunan {"addr":...,"key":...,"tskey":...} ile alanları doldurur, ÇOCUĞUN telefonu seçer, kaydeder
