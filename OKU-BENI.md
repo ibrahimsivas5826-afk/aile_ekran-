@@ -31,11 +31,13 @@ Telefonların internet üzerinden birbirini bulması için. Kişisel kullanım �
 ## 3) Senin telefonun (ebeveyn)
 1. Aile Ekranı'nda **Ortak anahtar** kutusuna bir kelime yaz (harf/rakam, örn. `aile2026x`), **BENİM telefonum**'u seç, adres kutusunu **boş bırak**, **Kaydet**'e bas.
 2. **İzinleri ver** (bildirim + pil).
-3. **"Eşleştirme kodunu göster (QR)"**'e bas — ekranda bir QR kod çıkar. Bunu çocuğun telefonuna okutacaksın, bir sonraki adıma geç.
+3. **"Eşleştirme kodunu göster (QR)"**'e bas — ekranda bir QR kod çıkar.
+   - İsteğe bağlı (çocuğun telefonu Tailscale'e **hiç giriş yapmadan** otomatik katılsın istiyorsan): aynı ekrandaki **"Tailscale panelini aç"** düğmesiyle `login.tailscale.com/admin/settings/keys` sayfasını aç, yeni bir erişim kodu (authkey) üret, kopyala, uygulamadaki kutuya yapıştır, **"QR'ı güncelle"**'ye bas. Bu kodu kimseyle paylaşma; artık gerekmediğinde panelden iptal edebilirsin.
+   - Bu adımı atlarsan sorun değil: çocuğun telefonunda Tailscale'e girişi bir kere elle yaparsın, sonrasında otomatik bağlı kalır.
 4. "Arama kayıtlarını gör" ile kimi ne zaman ne kadar aradığını listeleyebilirsin — çocuk kendi telefonundan kaydı silse bile, arama biter bitmez sana iletildiği için elinde kalır.
 
 ## 4) Çocuğun telefonu
-1. Aile Ekranı'nı aç, en üstteki **"2) QR ile Kur (Kodu Tara)"**a bas, kamerayı senin telefonundaki QR koda doğrult. Adres ve anahtar otomatik dolar, kaydedilir — elle hiçbir şey yazmana gerek yok.
+1. Aile Ekranı'nı aç, en üstteki **"2) QR ile Kur (Kodu Tara)"**a bas, kamerayı senin telefonundaki QR koda doğrult. Adres ve anahtar otomatik dolar, kaydedilir; Tailscale kurulu değilse Play Store otomatik açılır; erişim kodu eklediysen hesaba girmeden ağa katılım denenir (bir dakika içinde bağlanmazsa Tailscale'i açıp aynı hesapla elle giriş yap).
    - QR okutamazsan (kamera yoksa vb.) adres/anahtarı elle de yazabilirsin: adrese senin telefonunda QR ekranının altında yazan `http://100.x.y.z:8080`'i, anahtara da senin yazdığın kelimeyi gir, **ÇOCUĞUN telefonu**'nu seç, Kaydet.
 2. **1) İzinleri ver** (bildirim, **arama kayıtları**, **kişiler** + pil). Arama kayıtları izni verilmezse sadece o özellik çalışmaz, kilit bildirimi ve ekran paylaşımı yine çalışır.
 3. **2) Ekran paylaşımını başlat** → Android'in sorduğu pencerede **"Tüm ekran"** (Entire screen) seç → Başlat.
@@ -43,6 +45,7 @@ Telefonların internet üzerinden birbirini bulması için. Kişisel kullanım �
 Hepsi bu. Çocuk telefonu açınca sende "Çocuğun telefonu açıldı" bildirimi çıkar; dokununca canlı ekran gelir. Senin telefonunda uygulamayı açınca da doğrudan canlı ekran açılır.
 
 ## Bilmen gerekenler
+- Erişim koduyla otomatik Tailscale katılımı, Tailscale'in resmi olarak desteklemediği bir yöntemle çalışır; her zaman garanti değildir. Çalışmazsa tek yapman gereken Tailscale'i açıp çocuğun telefonunda da aynı hesapla elle giriş yapmaktır (bir kere yapılır, sonra kalıcıdır).
 - Senin telefonunda uygulama ve Tailscale açık kalmalı (kalıcı bir "Aile Ekranı" bildirimi görürsün). Telefon kapalı ya da internetsizken çocuğun açılış olayları yaklaşık 2 dakika denenir, sonra düşer.
 - Çocuğun telefonunda uygulama simgesi, "Aile Ekranı" bildirimi, Tailscale'in VPN anahtarı ve Android'in ekran paylaşım göstergesi görünür. Gizlenemez; çocuğa söylemen en doğrusu.
 - Çocuğun telefonu yeniden başlayınca kilit bildirimi kendiliğinden döner, ama **ekran paylaşımı için o telefonda uygulamayı açıp 2. adımı tekrarlamak gerekir** (Android güvenlik kuralı).

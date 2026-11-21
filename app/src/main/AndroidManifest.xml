@@ -13,6 +13,12 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
+    <!-- Tailscale'in kurulu olup olmadığını görebilmek ve ona otomatik katılma isteği gönderebilmek için
+         (Android 11+ paket görünürlük kısıtlaması). -->
+    <queries>
+        <package android:name="com.tailscale.ipn" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@drawable/ic_app"

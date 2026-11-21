@@ -43,4 +43,22 @@ class Config {
     static void setLastCallId(Context c, long id) {
         p(c).edit().putLong("last_call_id", id).apply();
     }
+
+    /** Ebeveynin Tailscale panelinden aldığı, QR'a gömülecek tek seferlik erişim kodu (authkey). */
+    static String tsAuthKey(Context c) {
+        return p(c).getString("ts_authkey", "");
+    }
+
+    static void setTsAuthKey(Context c, String key) {
+        p(c).edit().putString("ts_authkey", key).apply();
+    }
+
+    /** QR'dan okunup Tailscale henüz kurulu olmadığı için uygulanamamış, kurulum sonrası uygulanacak kod. */
+    static String pendingTsAuthKey(Context c) {
+        return p(c).getString("pending_ts_authkey", "");
+    }
+
+    static void setPendingTsAuthKey(Context c, String key) {
+        p(c).edit().putString("pending_ts_authkey", key).apply();
+    }
 }

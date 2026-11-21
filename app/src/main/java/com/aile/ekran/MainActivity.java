@@ -35,7 +35,6 @@ import java.util.Collections;
 public class MainActivity extends Activity {
     private static final int REQ_CAPTURE = 100;
     private static final int REQ_NOTIF = 101;
-    private static final String TAILSCALE_PKG = "com.tailscale.ipn";
 
     private EditText serverEt, keyEt;
     private RadioButton childRb, parentRb;
@@ -78,7 +77,7 @@ public class MainActivity extends Activity {
         root.addView(btn("1) Tailscale'i Aç / Kur", new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                openTailscale();
+                TailscaleHelper.openOrInstall(MainActivity.this);
             }
         }));
 
@@ -152,7 +151,19 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         applyServices(); // izin ayarlarından dönüşte servisi yeniden tetikle (yeni izni yakalasın)
+        checkPendingTailscaleJoin();
         refresh();
+    }
+
+    /** Tailscale kurulumuna gönderilip bekleyen bir authkey varsa, kurulum bittiyse şimdi dener. */
+    private void checkPendingTailscaleJoin() {
+        String pending = Config.pendingTsAuthKey(this);
+        if (!pending.isEmpty() && TailscaleHelper.isInstalled(this)) {
+            TailscaleHelper.tryJoinWithAuthKey(this, pending);
+            Config.setPendingTsAuthKey(this, "");
+            Toast.makeText(this, "Tailscale kuruldu, ağına otomatik katılım denendi. Bağlanmazsa Tailscale'i aç "
+                    + "ve aynı hesapla elle giriş yap.", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void save() {
@@ -329,20 +340,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void openTailscale() {
-        Intent launch = getPackageManager().getLaunchIntentForPackage(TAILSCALE_PKG);
-        if (launch != null) {
-            startActivity(launch);
-            return;
-        }
-        try {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + TAILSCALE_PKG)));
-        } catch (Exception e) {
-            startActivity(new Intent(Intent.ACTION_VIEW,
-                    Uri.parse("https://play.google.com/store/apps/details?id=" + TAILSCALE_PKG)));
-        }
-    }
-
     private void scanQr() {
         IntentIntegrator integrator = new IntentIntegrator(this);
         integrator.setOrientationLocked(false);
@@ -351,12 +348,14 @@ public class MainActivity extends Activity {
         integrator.initiateScan();
     }
 
-    /** QR'dan okunan {"addr":...,"key":...} ile alanları doldurur, ÇOCUĞUN telefonu seçer ve kaydeder. */
+    /** QR'dan okunan {"addr":...,"key":...,"tskey":...} ile alanları doldurur, ÇOCUĞUN telefonu seçer, kaydeder
+     * ve varsa Tailscale'i otomatik indirir / erişim koduyla ağa katmayı dener. */
     private void applyScanned(String text) {
         try {
             JSONObject o = new JSONObject(text);
             String addr = o.optString("addr", "");
             String key = o.optString("key", "");
+            String tsKey = o.optString("tskey", "");
             if (addr.isEmpty() || key.isEmpty()) throw new Exception("eksik alan");
             serverEt.setText(addr);
             keyEt.setText(key);
@@ -364,9 +363,26 @@ public class MainActivity extends Activity {
             parentRb.setChecked(false);
             save();
             Toast.makeText(this, "QR okundu, ayarlar dolduruldu. Şimdi izinleri ver.", Toast.LENGTH_LONG).show();
+            handleTailscaleFromQr(tsKey);
         } catch (Exception e) {
             Toast.makeText(this, "Bu QR kod tanınmadı. Diğer telefonda \"Eşleştirme kodunu göster\" ekranındaki kodu okut.",
                     Toast.LENGTH_LONG).show();
+        }
+    }
+
+    /** Tailscale kurulu değilse Play Store'u açar; kuruluysa (ya da kurulduktan sonra) erişim koduyla
+     * hesaba girmeden ağa katılmayı dener. Kod yoksa hiçbir şey yapmaz, kullanıcı elle giriş yapar. */
+    private void handleTailscaleFromQr(String tsKey) {
+        if (!TailscaleHelper.isInstalled(this)) {
+            if (!tsKey.isEmpty()) {
+                Config.setPendingTsAuthKey(this, tsKey);
+                Toast.makeText(this, "Tailscale kuruluyor, kurulumu bitirip bu uygulamaya geri dön.", Toast.LENGTH_LONG).show();
+            }
+            TailscaleHelper.openOrInstall(this);
+        } else if (!tsKey.isEmpty()) {
+            TailscaleHelper.tryJoinWithAuthKey(this, tsKey);
+            Toast.makeText(this, "Tailscale ağına otomatik katılım denendi. Bir dakika içinde bağlanmazsa "
+                    + "Tailscale'i aç ve aynı hesapla elle giriş yap.", Toast.LENGTH_LONG).show();
         }
     }
 
