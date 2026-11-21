@@ -24,18 +24,19 @@ Tek APK iki iş yapar: ilk açılışta "çocuğun telefonu" ya da "benim telefo
 
 ## 2) Tailscale (iki telefonda, ücretsiz)
 Telefonların internet üzerinden birbirini bulması için. Kişisel kullanım ücretsiz.
-1. Play Store'dan **Tailscale** uygulamasını **iki telefona** kur.
+1. Her iki telefonda da Aile Ekranı'nı aç, en üstteki **"1) Tailscale'i Aç / Kur"**a bas — kurulu değilse Play Store'a götürür, kuruluysa doğrudan açar.
 2. İkisinde de **aynı hesapla** giriş yap (Google hesabı yeterli) ve bağlan.
 3. Tailscale uygulamalarında pil kısıtlamasını da kaldır (yoksa Android arka planda kapatabilir).
 
 ## 3) Senin telefonun (ebeveyn)
-1. Aile Ekranı'nı aç → **Ortak anahtar** yaz (harf/rakam, örn. `aile2026x`) → **BENİM telefonum** → adres kutusunu **boş bırak** → Kaydet.
+1. Aile Ekranı'nda **Ortak anahtar** kutusuna bir kelime yaz (harf/rakam, örn. `aile2026x`), **BENİM telefonum**'u seç, adres kutusunu **boş bırak**, **Kaydet**'e bas.
 2. **İzinleri ver** (bildirim + pil).
-3. Ekranda "ÇOCUĞUN telefonuna yazacağın adres" çıkar: `http://100.x.y.z:8080`. Bunu not al.
+3. **"Eşleştirme kodunu göster (QR)"**'e bas — ekranda bir QR kod çıkar. Bunu çocuğun telefonuna okutacaksın, bir sonraki adıma geç.
 4. "Arama kayıtlarını gör" ile kimi ne zaman ne kadar aradığını listeleyebilirsin — çocuk kendi telefonundan kaydı silse bile, arama biter bitmez sana iletildiği için elinde kalır.
 
 ## 4) Çocuğun telefonu
-1. Aile Ekranı'nı aç → adres kutusuna yukarıdaki `http://100.x.y.z:8080` → aynı **anahtar** → **ÇOCUĞUN telefonu** → Kaydet.
+1. Aile Ekranı'nı aç, en üstteki **"2) QR ile Kur (Kodu Tara)"**a bas, kamerayı senin telefonundaki QR koda doğrult. Adres ve anahtar otomatik dolar, kaydedilir — elle hiçbir şey yazmana gerek yok.
+   - QR okutamazsan (kamera yoksa vb.) adres/anahtarı elle de yazabilirsin: adrese senin telefonunda QR ekranının altında yazan `http://100.x.y.z:8080`'i, anahtara da senin yazdığın kelimeyi gir, **ÇOCUĞUN telefonu**'nu seç, Kaydet.
 2. **1) İzinleri ver** (bildirim, **arama kayıtları**, **kişiler** + pil). Arama kayıtları izni verilmezse sadece o özellik çalışmaz, kilit bildirimi ve ekran paylaşımı yine çalışır.
 3. **2) Ekran paylaşımını başlat** → Android'in sorduğu pencerede **"Tüm ekran"** (Entire screen) seç → Başlat.
 

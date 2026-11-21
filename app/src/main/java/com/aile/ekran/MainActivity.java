@@ -22,6 +22,9 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+
 import org.json.JSONObject;
 
 import java.net.Inet4Address;
@@ -32,6 +35,7 @@ import java.util.Collections;
 public class MainActivity extends Activity {
     private static final int REQ_CAPTURE = 100;
     private static final int REQ_NOTIF = 101;
+    private static final String TAILSCALE_PKG = "com.tailscale.ipn";
 
     private EditText serverEt, keyEt;
     private RadioButton childRb, parentRb;
@@ -70,6 +74,22 @@ public class MainActivity extends Activity {
         title.setText("Aile Ekranı");
         title.setTextSize(26);
         root.addView(title);
+
+        root.addView(btn("1) Tailscale'i Aç / Kur", new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openTailscale();
+            }
+        }));
+
+        root.addView(btn("2) QR ile Kur (Kodu Tara)", new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                scanQr();
+            }
+        }));
+        root.addView(label("Yukarıdaki düğme ile diğer telefondaki QR kodu okut — adres ve anahtar otomatik dolar. "
+                + "QR yoksa/çalışmazsa aşağıya elle de yazabilirsin."));
 
         root.addView(label("Ebeveyn telefonunun adresi (örn. http://100.x.y.z:8080)\n"
                 + "ÇOCUĞUN telefonunda doldur. Ebeveyn telefonunda BOŞ bırak (sunucu bu telefonda çalışır)."));
@@ -225,6 +245,12 @@ public class MainActivity extends Activity {
                     askPermissions();
                 }
             }));
+            actions.addView(btn("Eşleştirme kodunu göster (QR)", new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    startActivity(new Intent(MainActivity.this, QrShowActivity.class));
+                }
+            }));
             actions.addView(btn("Çocuğun ekranını aç", new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -303,6 +329,48 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void openTailscale() {
+        Intent launch = getPackageManager().getLaunchIntentForPackage(TAILSCALE_PKG);
+        if (launch != null) {
+            startActivity(launch);
+            return;
+        }
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + TAILSCALE_PKG)));
+        } catch (Exception e) {
+            startActivity(new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://play.google.com/store/apps/details?id=" + TAILSCALE_PKG)));
+        }
+    }
+
+    private void scanQr() {
+        IntentIntegrator integrator = new IntentIntegrator(this);
+        integrator.setOrientationLocked(false);
+        integrator.setBeepEnabled(false);
+        integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE_TYPES);
+        integrator.setPrompt("Diğer telefondaki QR kodunu kameraya göster");
+        integrator.initiateScan();
+    }
+
+    /** QR'dan okunan {"addr":...,"key":...} ile alanları doldurur, ÇOCUĞUN telefonu seçer ve kaydeder. */
+    private void applyScanned(String text) {
+        try {
+            JSONObject o = new JSONObject(text);
+            String addr = o.optString("addr", "");
+            String key = o.optString("key", "");
+            if (addr.isEmpty() || key.isEmpty()) throw new Exception("eksik alan");
+            serverEt.setText(addr);
+            keyEt.setText(key);
+            childRb.setChecked(true);
+            parentRb.setChecked(false);
+            save();
+            Toast.makeText(this, "QR okundu, ayarlar dolduruldu. Şimdi izinleri ver.", Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Bu QR kod tanınmadı. Diğer telefonda \"Eşleştirme kodunu göster\" ekranındaki kodu okut.",
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
     private void startCapture() {
         MediaProjectionManager m = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         startActivityForResult(m.createScreenCaptureIntent(), REQ_CAPTURE);
@@ -311,6 +379,11 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        IntentResult scan = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (scan != null) {
+            if (scan.getContents() != null) applyScanned(scan.getContents());
+            return;
+        }
         if (requestCode == REQ_CAPTURE) {
             if (resultCode == RESULT_OK && data != null) {
                 Intent i = new Intent(this, CaptureService.class);
