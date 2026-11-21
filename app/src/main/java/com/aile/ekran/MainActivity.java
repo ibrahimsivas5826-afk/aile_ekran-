@@ -347,7 +347,6 @@ public class MainActivity extends Activity {
         IntentIntegrator integrator = new IntentIntegrator(this);
         integrator.setOrientationLocked(false);
         integrator.setBeepEnabled(false);
-        integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE_TYPES);
         integrator.setPrompt("Diğer telefondaki QR kodunu kameraya göster");
         integrator.initiateScan();
     }
